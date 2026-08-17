@@ -2,82 +2,138 @@ import java.util.ArrayList;
 
 public class JobMateMatcher {
 
-    public static void main(String[] args) {
+    public static MatchResult calculateMatch(Candidate candidate, Job job) {
 
-        String[] candidateSkills = {"Java", "SQL", "Git", "HTML"};
-        String[] jobSkills = {"Java", "C#", "SQL", "Git"};
+        ArrayList<String> requiredMatchedSkills = new ArrayList<>();
+        ArrayList<String> requiredRelatedSkills = new ArrayList<>();
+        ArrayList<String> requiredMissingSkills = new ArrayList<>();
 
-        MatchResult result = calculateMatch(candidateSkills, jobSkills);
+        ArrayList<String> preferredMatchedSkills = new ArrayList<>();
+        ArrayList<String> preferredRelatedSkills = new ArrayList<>();
+        ArrayList<String> preferredMissingSkills = new ArrayList<>();
 
-        System.out.println("Match Percentage: " + result.getMatchPercentage() + "%");
-    }
+        double requiredScore = scoreSkills(
+                job.getRequiredSkills(),
+                candidate,
+                1.0,
+                0.5,
+                requiredMatchedSkills,
+                requiredRelatedSkills,
+                requiredMissingSkills
+        );
 
-    public static MatchResult calculateMatch(String[] candidateSkills, String[] jobSkills) {
+        double preferredScore = scoreSkills(
+                job.getPreferredSkills(),
+                candidate,
+                0.5,
+                0.25,
+                preferredMatchedSkills,
+                preferredRelatedSkills,
+                preferredMissingSkills
+        );
 
-        ArrayList<String> matchedSkills = new ArrayList<>();
-        ArrayList<String> missingSkills = new ArrayList<>();
-        ArrayList<String> relatedSkills = new ArrayList<>();
+        double totalScore = requiredScore + preferredScore;
 
-        double score = 0.0;
+        double maxScore =
+                job.getRequiredSkills().size() * 1.0
+                        + job.getPreferredSkills().size() * 0.5;
 
-        if (jobSkills.length == 0) {
+        if (maxScore == 0) {
             return new MatchResult(
                     0.0,
-                    matchedSkills,
-                    relatedSkills,
-                    missingSkills
+                   requiredMatchedSkills,
+                    requiredRelatedSkills,
+                    requiredMissingSkills,
+                    preferredMatchedSkills,
+                    preferredRelatedSkills,
+                    preferredMissingSkills
             );
         }
 
-        for (int i = 0; i < jobSkills.length; i++) {
+        double matchPercentage = totalScore / maxScore * 100;
+
+        return new MatchResult(
+                matchPercentage,
+                requiredMatchedSkills,
+                requiredRelatedSkills,
+                requiredMissingSkills,
+                preferredMatchedSkills,
+                preferredRelatedSkills,
+                preferredMissingSkills
+        );
+    }
+
+    public static double scoreSkills(
+            ArrayList<String> jobSkills,
+            Candidate candidate,
+            double exactWeight,
+            double relatedWeight,
+            ArrayList<String> matchedSkills,
+            ArrayList<String> relatedSkills,
+            ArrayList<String> missingSkills) {
+
+        double score = 0.0;
+
+        for (int i = 0; i < jobSkills.size(); i++) {
 
             boolean foundMatch = false;
             boolean relatedMatchFound = false;
             String relatedCandidateSkill = null;
 
+            for (int j = 0; j < candidate.getSkills().size(); j++) {
 
-            for (int j = 0; j < candidateSkills.length; j++) {
+                if (jobSkills.get(i).equalsIgnoreCase(candidate.getSkills().get(j))) {
 
-                if (jobSkills[i].equalsIgnoreCase(candidateSkills[j])) {
                     foundMatch = true;
-                    score += 1.0;
-                    matchedSkills.add(jobSkills[i]);
+                    score += exactWeight;
+                    matchedSkills.add(jobSkills.get(i));
                     break;
-                } else if (areRelatedSkills(jobSkills[i], candidateSkills[j])) {
-                    relatedMatchFound = true;
-                    relatedCandidateSkill = candidateSkills[j];
 
+                } else if (areRelatedSkills(
+                        jobSkills.get(i),
+                        candidate.getSkills().get(j))) {
+
+                    relatedMatchFound = true;
+                    relatedCandidateSkill = candidate.getSkills().get(j);
                 }
             }
 
             if (!foundMatch && relatedMatchFound) {
-                score += 0.5;
-                relatedSkills.add(jobSkills[i] + " <- " + relatedCandidateSkill);
-            }
-            else if (!foundMatch) {
-                missingSkills.add(jobSkills[i]);
+
+                score += relatedWeight;
+
+                relatedSkills.add(
+                        jobSkills.get(i)
+                                + " <- "
+                                + relatedCandidateSkill
+                );
+
+            } else if (!foundMatch) {
+
+                missingSkills.add(jobSkills.get(i));
             }
         }
 
-        double matchPercentage = score / jobSkills.length * 100;
-
-        return new MatchResult(
-                matchPercentage,
-                matchedSkills,
-                relatedSkills,
-                missingSkills
-        );
+        return score;
     }
 
     public static boolean areRelatedSkills(String skill1, String skill2) {
 
-        if ((skill1.equalsIgnoreCase("Java") && skill2.equalsIgnoreCase("C#")) ||
-                (skill1.equalsIgnoreCase("C#") && skill2.equalsIgnoreCase("Java"))) {
+        if ((skill1.equalsIgnoreCase("Java")
+                && skill2.equalsIgnoreCase("C#"))
+                ||
+                (skill1.equalsIgnoreCase("C#")
+                        && skill2.equalsIgnoreCase("Java"))) {
+
             return true;
         }
 
-        if ((skill1.equalsIgnoreCase("JavaScript") && skill2.equalsIgnoreCase("TypeScript")) ||
-                (skill1.equalsIgnoreCase("TypeScript") && skill2.equalsIgnoreCase("JavaScript"))) {
+        if ((skill1.equalsIgnoreCase("JavaScript")
+                && skill2.equalsIgnoreCase("TypeScript"))
+                ||
+                (skill1.equalsIgnoreCase("TypeScript")
+                        && skill2.equalsIgnoreCase("JavaScript"))) {
+
             return true;
         }
 
