@@ -1,5 +1,7 @@
+
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Main {
 
@@ -21,12 +23,18 @@ public class Main {
 
         String[] candidateSkills = candidateInput.split(",");
 
-        ArrayList<String> skills = new ArrayList<>();
+        HashSet<String> uniqueSkills = new HashSet<>();
 
         for (int i = 0; i < candidateSkills.length; i++) {
-            candidateSkills[i] = candidateSkills[i].trim();
-            skills.add(candidateSkills[i]);
+
+            String cleanedSkill = candidateSkills[i]
+                    .trim()
+                    .toLowerCase();
+
+            uniqueSkills.add(cleanedSkill);
         }
+
+        ArrayList<String> skills = new ArrayList<>(uniqueSkills);
 
         Candidate candidate = new Candidate(
                 name,
@@ -45,12 +53,19 @@ public class Main {
         String jobInput = scanner.nextLine();
         String[] jobSkills = jobInput.split(",");
 
-        ArrayList<String> requiredSkills = new ArrayList<>();
+        HashSet<String> uniqueRequiredSkills = new HashSet<>();
 
         for (int i = 0; i < jobSkills.length; i++) {
-            jobSkills[i] = jobSkills[i].trim();
-            requiredSkills.add(jobSkills[i]);
+
+            String cleanedSkill = jobSkills[i]
+                    .trim()
+                    .toLowerCase();
+
+            uniqueRequiredSkills.add(cleanedSkill);
         }
+
+        ArrayList<String> requiredSkills =
+                new ArrayList<>(uniqueRequiredSkills);
 
 
 
@@ -59,12 +74,19 @@ public class Main {
 
         String[] preferredSkillArray = preferredInput.split(",");
 
-        ArrayList<String> preferredSkills = new ArrayList<>();
+        HashSet<String> uniquePreferredSkills = new HashSet<>();
 
         for (int i = 0; i < preferredSkillArray.length; i++) {
-            preferredSkillArray[i] = preferredSkillArray[i].trim();
-            preferredSkills.add(preferredSkillArray[i]);
+
+            String cleanedSkill = preferredSkillArray[i]
+                    .trim()
+                    .toLowerCase();
+
+            uniquePreferredSkills.add(cleanedSkill);
         }
+
+        ArrayList<String> preferredSkills =
+                new ArrayList<>(uniquePreferredSkills);
 
         Job job = new Job(
                 jobTitle,
@@ -86,9 +108,8 @@ public class Main {
         System.out.println("Related: " + result.getPreferredRelatedSkills());
         System.out.println("Missing: " + result.getPreferredMissingSkills());
 
-        System.out.println("\nOverall Match Percentage: "
-                + result.getMatchPercentage()
-                + "%");
+        System.out.println("\nOverall Match Percentage: %.2F%%%n"
+                + result.getMatchPercentage());
 
         scanner.close();
     }
