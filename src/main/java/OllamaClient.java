@@ -2,37 +2,52 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.Gson;
 
 public class OllamaClient {
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
+
+        String jobDescription = """
+                We are looking for a Software Engineer Placement student at Example Ltd.
+                Java and SQL are essential.
+                Experience with AWS or Azure would be advantageous.
+                """;
+
+        Job job = extractJob(jobDescription);
+
+        System.out.println(job.getTitle());
+        System.out.println(job.getCompany());
+        System.out.println(job.getRequiredSkills());
+        System.out.println(job.getPreferredSkills());
+    }
+
+
+    public static Job extractJob(String jobDescription) throws Exception {
 
         HttpClient client = HttpClient.newHttpClient();
 
         String prompt = """
-        You are a job-description extraction system.
+                You are a job-description extraction system.
 
-        Extract these fields:
-        - title
-        - company
-        - requiredSkills
-        - preferredSkills
+                Extract these fields:
+                - title
+                - company
+                - requiredSkills
+                - preferredSkills
 
-        Rules:
-        - Do not invent information.
-        - Keep required and preferred skills separate.
-        - Only include skills supported by the advert.
-        - If title or company is unknown, use an empty string.
-        - Return JSON only.
+                Rules:
+                - Do not invent information.
+                - Keep required and preferred skills separate.
+                - Only include skills supported by the advert.
+                - If title or company is unknown, use an empty string.
+                - Return JSON only.
 
-        Job advert:
-        We are looking for a Software Engineer Placement student at Example Ltd.
-        Java and SQL are essential.
-        Experience with AWS or Azure would be advantageous.
-        """;
+                Job advert:
+                """ + jobDescription;
 
         JsonObject requestJson = new JsonObject();
 
@@ -48,29 +63,25 @@ public class OllamaClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
+
         HttpResponse<String> response = client.send(
                 request,
                 HttpResponse.BodyHandlers.ofString()
         );
 
-        JsonObject jsonObject = JsonParser.parseString(response.body()).getAsJsonObject();
+        JsonObject jsonObject =
+                JsonParser.parseString(response.body()).getAsJsonObject();
 
-        String aiResponse = jsonObject.get("response").getAsString();
+        String aiResponse =
+                jsonObject.get("response").getAsString();
 
         aiResponse = aiResponse
                 .replace("```json", "")
                 .replace("```", "")
                 .trim();
 
-        System.out.println("RAW AI RESPONSE:");
-        System.out.println(aiResponse);
-
         Gson gson = new Gson();
-        Job job = gson.fromJson(aiResponse, Job.class);
 
-        System.out.println(job.getTitle());
-        System.out.println(job.getCompany());
-        System.out.println(job.getRequiredSkills());
-        System.out.println(job.getPreferredSkills());
+        return gson.fromJson(aiResponse, Job.class);
     }
 }
